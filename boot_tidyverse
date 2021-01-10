@@ -1,0 +1,30 @@
+library(tidyverse)
+library(tidymodels)
+#Test with mtcars
+
+mtcars
+
+rec <- recipe(mpg ~ . , data = mtcars) %>% 
+  step_mutate_at(c('cyl','vs','gear', 'carb'),  fn = ~ factor(.)) %>% 
+  step_dummy(all_nominal())
+
+mtcars_prep <- rec %>% prep() %>% juice()
+
+##only one model
+model_lm <- lm(mpg ~ . , data = mtcars_prep)
+
+
+##To use boot strat data on boostrap
+folds <- bootstraps(mtcars_prep, times = 1000)
+
+results <-
+  folds %>% 
+  mutate(model = map(splits, function(x) { lm(mpg ~ . , analysis(x))}),
+         coef_model = map(model, tidy))
+
+coef_model <- 
+  results %>% 
+  unnest(coef_model)
+
+percentile_interval <- int_pctl(results, coef_model)
+percentile_interval
