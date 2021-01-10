@@ -26,5 +26,12 @@ coef_model <-
   results %>% 
   unnest(coef_model)
 
+
+ggplot(coef_model, aes(estimate)) +
+  geom_histogram(bins = 30) +
+  facet_wrap( ~ term, scales = "free") +
+  geom_vline(aes(xintercept = .lower), data = percentile_interval, col = "blue") +
+  geom_vline(aes(xintercept = .upper), data = percentile_interval, col = "blue")
+
 percentile_interval <- int_pctl(results, coef_model)
 percentile_interval
