@@ -1,0 +1,44 @@
+library(tidyverse)
+library(tidymodels)
+
+mtcars
+
+model1 <- lm(mpg ~ disp + hp, data = mtcars)
+summary(model1)
+
+
+## using boostrap
+rec <- recipe(mpg ~ disp + hp, data = mtcars)
+
+model_lm <- linear_reg()
+
+
+work_lm <- workflow(rec, model_lm)
+
+
+## boots
+folds <- bootstraps(mtcars, times = 100, apparent = TRUE)
+
+## fit resamples
+extract <- function(x){
+  x %>% 
+  extract_fit_engine() %>% 
+    tidy()
+} 
+
+res_fit <- fit_resamples(
+  work_lm,
+  resamples = folds,
+  control = control_resamples(extract = extract)
+)
+
+res_fit %>% 
+  select(id, .extracts) %>% 
+  unnest(.extracts) %>% 
+  unnest(.extracts) %>% 
+  ggplot(aes(estimate, fill = term))+
+  geom_histogram(color = 'white')+
+  facet_wrap(~ term, scales = 'free')+
+  theme(legend.position = 'none')+
+  geom_vline(xintercept = 0, linetype = 'dashed')
+
